@@ -1,0 +1,18 @@
+{
+  "id": "493974f0-2869-43f7-8cf1-170225b76aca",
+  "name": "Camera Authentication Before Posting",
+  "publisher": "Dmitry Katson",
+  "version": "1.0.0.0",
+  "logo": "./src/logo/logo.png",
+  "platform": "16.0.0.0",
+  "application": "16.0.0.0",
+  "idRanges": [
+    {
+      "from": 80100,
+      "to": 80149
+    }
+  ],
+  "contextSensitiveHelpUrl": "https://CameraAuthenticationBeforePosting.com/help/",
+  "showMyCode": true,
+  "runtime": "5.0"
+}

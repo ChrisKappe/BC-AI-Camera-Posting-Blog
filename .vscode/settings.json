@@ -1,0 +1,12 @@
+{
+    "al.defaultLaunchConfigurationName": "Microsoft cloud sandbox",
+    "git.ignoreLimitWarning": true,
+    "CRS.DisableDefaultAlSnippets": true,
+    "CRS.FileNamePattern": "<ObjectNameShort>.<ObjectTypeShortPascalCase>.al",
+    "CRS.FileNamePatternExtensions": "<ObjectNameShort>.<ObjectTypeShortPascalCase>.al",
+    "CRS.FileNamePatternPageCustomizations": "<ObjectNameShort>.<ObjectTypeShortPascalCase>.al",
+    "CRS.OnSaveAlFileAction": "Reorganize",
+    "CRS.RenameWithGit": true,
+    "CRS.ObjectNamePrefix": "AIR ",
+    "CRS.RemovePrefixFromFilename": true
+}
