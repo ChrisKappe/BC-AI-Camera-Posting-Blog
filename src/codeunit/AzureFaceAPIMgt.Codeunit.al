@@ -1,6 +1,6 @@
 codeunit 80102 "AIR Azure FaceAPI Mgt."
 {
-    procedure SendPictureToAzureAndGetFaceId(var FaceId: Text; var PictureInStream: InStream)
+    procedure SendPictureToAzureAndGetFaceId(var FaceId: Text; var TempPicture: Record "AIR Temp Picture" temporary)
     var
         RequestMessage: HttpRequestMessage;
         HttpContent: HttpContent;
@@ -11,29 +11,24 @@ codeunit 80102 "AIR Azure FaceAPI Mgt."
 
         PictureInTextFormat: Text;
         TenantMedia: Record "Tenant Media";
-        UserSetup: Record "User Setup";
+        InStream: InStream;
     begin
-        //temporary
-        UserSetup.Get(UserId);
-        TenantMedia.Get(UserSetup."AIR Picture".MediaId);
+
+        TenantMedia.get(TempPicture.Picture.MediaId);
         TenantMedia.CalcFields(Content);
-        if TenantMedia.Content.HasValue() then begin
-            Clear(PictureInStream);
-            TenantMedia.Content.CreateInStream(PictureInStream);
-            HttpContent.WriteFrom(PictureInStream);
-            HttpContent.ReadAs(PictureInTextFormat);
-        end;
+        TenantMedia.Content.CreateInStream(InStream);
+
+        HttpContent.WriteFrom(InStream);
+        HttpContent.ReadAs(PictureInTextFormat);
 
         HttpContent.GetHeaders(ContentHeaders);
         ContentHeaders.Clear();
         ContentHeaders.Add('Content-type', 'application/octet-stream');
-        //ContentHeaders.Add('Ocp-Apim-Subscription-Key', GetKey());
+        ContentHeaders.Add('Ocp-Apim-Subscription-Key', GetKey());
         RequestMessage.Content(HttpContent);
 
         RequestMessage.SetRequestUri(GetUriForFaceIdDetectService());
         RequestMessage.Method := 'POST';
-
-        HttpClient.DefaultRequestHeaders.Add('Ocp-Apim-Subscription-Key', GetKey());
 
         HttpClient.Send(RequestMessage, ResponseMessage);
 
@@ -45,9 +40,43 @@ codeunit 80102 "AIR Azure FaceAPI Mgt."
                   ResponseMessage.ReasonPhrase);
 
         HttpContent := ResponseMessage.Content;
-        ResponseMessage.Content.ReadAs(ResponseTxt);
-        Error(ResponseTxt);
-        //GetFaceIdFromJSon(HttpContent, FaceId);
+        GetFaceIdFromJSon(HttpContent, FaceId);
+    end;
+
+    local procedure GetFaceIdFromJSon(var HttpContent: HttpContent; var FaceId: Text)
+    var
+        ContentInTextFormat: Text;
+        JsonArray: JsonArray;
+        JSonObject: JsonObject;
+        JsonToken: JsonToken;
+    begin
+        HttpContent.ReadAs(ContentInTextFormat);
+
+        If not JsonArray.ReadFrom(ContentInTextFormat) then
+            error('Invalid response, expected an JSON array as root object');
+
+        JsonArray.Get(0, JsonToken);
+        JsonObject := JsonToken.AsObject;
+        FaceId := GetJsonValueAsText(JSonObject, 'faceId');
+    end;
+
+    procedure GetJsonValueAsText(var JsonObject: JsonObject; Property: text) Value: Text;
+    var
+        JsonValue: JsonValue;
+    begin
+        if not GetJsonValue(JsonObject, Property, JsonValue) then
+            exit;
+        Value := JsonValue.AsText;
+    end;
+
+    local procedure GetJsonValue(var JsonObject: JsonObject; Property: text; var JsonValue: JsonValue): Boolean;
+    var
+        JsonToken: JsonToken;
+    begin
+        if not JsonObject.Get(Property, JsonToken) then
+            exit;
+        JsonValue := JsonToken.AsValue;
+        Exit(true);
     end;
 
     local procedure GetUriForFaceIdDetectService(): Text
