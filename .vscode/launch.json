@@ -1,31 +1,31 @@
 {
     "version": "0.2.0",
     "configurations": [
-        {
-            "name": "Publish: Your own server",
-            "type": "al",
-            "request": "launch",
-            "server": "http://bc16us",
-            "serverInstance": "BC",
-            "authentication": "UserPassword",
-            "startupObjectId": 22,
-            "breakOnError": true,
-            "breakOnRecordWrite": false,
-            "launchBrowser": true,
-            "enableSqlInformationDebugger": true,
-            "enableLongRunningSqlStatements": true,
-            "longRunningSqlStatementsThreshold": 500,
-            "numberOfSqlStatements": 10
-        },
         // {
+        //     "name": "Publish: Your own server",
         //     "type": "al",
         //     "request": "launch",
-        //     "name": "Microsoft cloud sandbox",
-        //     "sandboxName": "MySandbox",
+        //     "server": "http://bc16us",
+        //     "serverInstance": "BC",
+        //     "authentication": "UserPassword",
+        //     "startupObjectId": 22,
         //     "breakOnError": true,
+        //     "breakOnRecordWrite": false,
         //     "launchBrowser": true,
+        //     "enableSqlInformationDebugger": true,
         //     "enableLongRunningSqlStatements": true,
-        //     "enableSqlInformationDebugger": true
-        // }
+        //     "longRunningSqlStatementsThreshold": 500,
+        //     "numberOfSqlStatements": 10
+        // },
+        {
+            "type": "al",
+            "request": "launch",
+            "name": "Microsoft cloud sandbox",
+            "sandboxName": "MySandbox",
+            "breakOnError": true,
+            "launchBrowser": true,
+            "enableLongRunningSqlStatements": true,
+            "enableSqlInformationDebugger": true
+        }
     ]
 }

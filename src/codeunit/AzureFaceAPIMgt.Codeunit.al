@@ -7,19 +7,33 @@ codeunit 80102 "AIR Azure FaceAPI Mgt."
         ContentHeaders: HttpHeaders;
         HttpClient: HttpClient;
         ResponseMessage: HttpResponseMessage;
+        ResponseTxt: Text;
+
+        PictureInTextFormat: Text;
+        TenantMedia: Record "Tenant Media";
+        UserSetup: Record "User Setup";
     begin
-        HttpContent.WriteFrom(PictureInStream);
-        //HttpContent.ReadAs(PictureInTextFormat);
+        //temporary
+        UserSetup.Get(UserId);
+        TenantMedia.Get(UserSetup."AIR Picture".MediaId);
+        TenantMedia.CalcFields(Content);
+        if TenantMedia.Content.HasValue() then begin
+            Clear(PictureInStream);
+            TenantMedia.Content.CreateInStream(PictureInStream);
+            HttpContent.WriteFrom(PictureInStream);
+            HttpContent.ReadAs(PictureInTextFormat);
+        end;
+
         HttpContent.GetHeaders(ContentHeaders);
         ContentHeaders.Clear();
         ContentHeaders.Add('Content-type', 'application/octet-stream');
-        ContentHeaders.Add('Ocp-Apim-Subscription-Key', GetKey());
+        //ContentHeaders.Add('Ocp-Apim-Subscription-Key', GetKey());
         RequestMessage.Content(HttpContent);
 
         RequestMessage.SetRequestUri(GetUriForFaceIdDetectService());
         RequestMessage.Method := 'POST';
 
-        //HttpClient.DefaultRequestHeaders.Add('Ocp-Apim-Subscription-Key', GetKey());
+        HttpClient.DefaultRequestHeaders.Add('Ocp-Apim-Subscription-Key', GetKey());
 
         HttpClient.Send(RequestMessage, ResponseMessage);
 
@@ -31,8 +45,9 @@ codeunit 80102 "AIR Azure FaceAPI Mgt."
                   ResponseMessage.ReasonPhrase);
 
         HttpContent := ResponseMessage.Content;
-
-        GetFaceIdFromJSon(HttpContent, FaceId);
+        ResponseMessage.Content.ReadAs(ResponseTxt);
+        Error(ResponseTxt);
+        //GetFaceIdFromJSon(HttpContent, FaceId);
     end;
 
     local procedure GetUriForFaceIdDetectService(): Text
