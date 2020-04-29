@@ -114,7 +114,7 @@ codeunit 80102 "AIR Azure FaceAPI Mgt."
         isIdentical := GetJsonValueAsBoolean(JSonObject, 'isIdentical');
         Confidence := GetJsonValueAsDecimal(JSonObject, 'confidence');
 
-        Verified := isIdentical and (Confidence > 0.5);
+        Verified := isIdentical;
     end;
 
     local procedure GetJsonValueAsText(var JsonObject: JsonObject; Property: text) Value: Text;
