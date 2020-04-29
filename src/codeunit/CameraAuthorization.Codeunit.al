@@ -44,8 +44,7 @@ codeunit 80101 "AIR CameraAuthorization"
         SendPictureToAzureAndGetFaceId(Handled, CurrentFaceId, TempPicture);
         GetOriginalPicture(Handled, TempPicture);
         SendPictureToAzureAndGetFaceId(Handled, OriginalFaceId, TempPicture);
-        Error(StrSubstNo('CurrentFaceId:%1, OriginalFaceId:%2', CurrentFaceId, OriginalFaceId));
-        //VerifyIfTwoFacesBelongToOnePerson(Handled, Verified, OriginalFaceId, CurrentFaceId);
+        VerifyIfTwoFacesBelongToOnePerson(Handled, Verified, OriginalFaceId, CurrentFaceId);
     end;
 
     local procedure SendPictureToAzureAndGetFaceId(var Handled: Boolean; var FaceId: Text; var TempPicture: Record "AIR Temp Picture" temporary)
@@ -56,6 +55,16 @@ codeunit 80101 "AIR CameraAuthorization"
             exit;
 
         AzureFaceIdApiMgt.SendPictureToAzureAndGetFaceId(FaceId, TempPicture);
+    end;
+
+    local procedure VerifyIfTwoFacesBelongToOnePerson(var Handled: Boolean; var Verified: Boolean; FaceId1: Text; FaceId2: Text)
+    var
+        AzureFaceIdApiMgt: Codeunit "AIR Azure FaceAPI Mgt.";
+    begin
+        if Handled then
+            exit;
+
+        AzureFaceIdApiMgt.VerifyIfTwoFacesBelongToOnePerson(Verified, FaceId1, FaceId2);
     end;
 
     local procedure GetOriginalPicture(var Handled: Boolean; var TempPicture: Record "AIR Temp Picture" temporary)

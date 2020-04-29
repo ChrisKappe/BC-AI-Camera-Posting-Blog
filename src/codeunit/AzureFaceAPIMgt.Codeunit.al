@@ -43,6 +43,48 @@ codeunit 80102 "AIR Azure FaceAPI Mgt."
         GetFaceIdFromJSon(HttpContent, FaceId);
     end;
 
+    procedure VerifyIfTwoFacesBelongToOnePerson(var Verified: Boolean; FaceId1: Text; FaceId2: Text)
+    var
+        RequestMessage: HttpRequestMessage;
+        HttpContent: HttpContent;
+        ContentHeaders: HttpHeaders;
+        HttpClient: HttpClient;
+        ResponseMessage: HttpResponseMessage;
+        ResponseTxt: Text;
+        BodyTxt: Text;
+
+    begin
+        if FaceId1 = '' then
+            exit;
+
+        if FaceId2 = '' then
+            exit;
+
+        BodyTxt := StrSubstNo('{ "faceId1": "%1", "faceId2": "%2" }', FaceId1, FaceId2);
+        HttpContent.WriteFrom(BodyTxt);
+        HttpContent.GetHeaders(ContentHeaders);
+        ContentHeaders.Clear();
+        ContentHeaders.Add('Content-type', 'application/json');
+        ContentHeaders.Add('Ocp-Apim-Subscription-Key', GetKey());
+        RequestMessage.Content(HttpContent);
+
+        RequestMessage.SetRequestUri(GetUriForFaceVerifyService());
+        RequestMessage.Method := 'POST';
+
+        HttpClient.Send(RequestMessage, ResponseMessage);
+
+        if not ResponseMessage.IsSuccessStatusCode then
+            error('The web service returned an error message:\\' +
+                  'Status code: %1\' +
+                  'Description: %2',
+                  ResponseMessage.HttpStatusCode,
+                  ResponseMessage.ReasonPhrase);
+
+        HttpContent := ResponseMessage.Content;
+        GetVeifiedFromJSon(HttpContent, Verified);
+
+    end;
+
     local procedure GetFaceIdFromJSon(var HttpContent: HttpContent; var FaceId: Text)
     var
         ContentInTextFormat: Text;
@@ -60,13 +102,46 @@ codeunit 80102 "AIR Azure FaceAPI Mgt."
         FaceId := GetJsonValueAsText(JSonObject, 'faceId');
     end;
 
-    procedure GetJsonValueAsText(var JsonObject: JsonObject; Property: text) Value: Text;
+    local procedure GetVeifiedFromJSon(var HttpContent: HttpContent; var Verified: Boolean)
+    var
+        ContentInTextFormat: Text;
+        JSonObject: JsonObject;
+        Confidence: Decimal;
+        isIdentical: Boolean;
+    begin
+        HttpContent.ReadAs(ContentInTextFormat);
+        JSonObject.ReadFrom(ContentInTextFormat);
+        isIdentical := GetJsonValueAsBoolean(JSonObject, 'isIdentical');
+        Confidence := GetJsonValueAsDecimal(JSonObject, 'confidence');
+
+        Verified := isIdentical and (Confidence > 0.5);
+    end;
+
+    local procedure GetJsonValueAsText(var JsonObject: JsonObject; Property: text) Value: Text;
     var
         JsonValue: JsonValue;
     begin
         if not GetJsonValue(JsonObject, Property, JsonValue) then
             exit;
         Value := JsonValue.AsText;
+    end;
+
+    local procedure GetJsonValueAsBoolean(var JsonObject: JsonObject; Property: text) Value: Boolean;
+    var
+        JsonValue: JsonValue;
+    begin
+        if not GetJsonValue(JsonObject, Property, JsonValue) then
+            exit;
+        Value := JsonValue.AsBoolean();
+    end;
+
+    local procedure GetJsonValueAsDecimal(var JsonObject: JsonObject; Property: text) Value: Decimal;
+    var
+        JsonValue: JsonValue;
+    begin
+        if not GetJsonValue(JsonObject, Property, JsonValue) then
+            exit;
+        Value := JsonValue.AsDecimal();
     end;
 
     local procedure GetJsonValue(var JsonObject: JsonObject; Property: text; var JsonValue: JsonValue): Boolean;
