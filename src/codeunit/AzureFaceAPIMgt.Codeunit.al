@@ -1,6 +1,6 @@
 codeunit 80102 "AIR Azure FaceAPI Mgt."
 {
-    procedure SendPictureToAzureAndGetFaceId(var FaceId: Text; var TempPicture: Record "AIR Temp Picture" temporary)
+    procedure SendPictureToAzureAndGetFaceId(var FaceId: Text; BlobId: BigInteger)
     var
         RequestMessage: HttpRequestMessage;
         HttpContent: HttpContent;
@@ -10,13 +10,17 @@ codeunit 80102 "AIR Azure FaceAPI Mgt."
         ResponseTxt: Text;
 
         PictureInTextFormat: Text;
-        TenantMedia: Record "Tenant Media";
+
+        PersistentBlob: codeunit "Persistent Blob";
+        TempBlob: Codeunit "Temp Blob";
+        OutStream: OutStream;
         InStream: InStream;
     begin
 
-        TenantMedia.get(TempPicture.Picture.MediaId);
-        TenantMedia.CalcFields(Content);
-        TenantMedia.Content.CreateInStream(InStream);
+        //moved code from GetPictureFromTemporaryLocation(), because InStream was not returned
+        TempBlob.CreateOutStream(OutStream);
+        PersistentBlob.CopyToOutStream(BlobId, OutStream);
+        TempBlob.CreateInStream(InStream);
 
         HttpContent.WriteFrom(InStream);
         HttpContent.ReadAs(PictureInTextFormat);
@@ -185,6 +189,15 @@ codeunit 80102 "AIR Azure FaceAPI Mgt."
         exit('ba9d5b3bba1e4d5493b6b447e873d0c1')
     end;
 
-
+    local procedure GetPictureFromTemporaryLocation(InStream: InStream; BlobId: BigInteger)
+    var
+        PersistentBlob: codeunit "Persistent Blob";
+        TempBlob: Codeunit "Temp Blob";
+        OutStream: OutStream;
+    begin
+        TempBlob.CreateOutStream(OutStream);
+        PersistentBlob.CopyToOutStream(BlobId, OutStream);
+        TempBlob.CreateInStream(InStream);
+    end;
 
 }

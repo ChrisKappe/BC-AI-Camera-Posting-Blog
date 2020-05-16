@@ -1,17 +1,19 @@
 codeunit 80101 "AIR CameraAuthorization"
 {
+    var
+        BlobId: BigInteger;
+
     procedure BreakPostingIfUserIsNotAuthorizedThroughCamera()
     var
         Handled: Boolean;
-        TempPicture: Record "AIR Temp Picture" temporary;
         Verified: Boolean;
     begin
-        OpenCameraAndTakePicture(Handled, TempPicture);
-        SendPictureToAzureAndVerifyUser(Handled, Verified, TempPicture);
+        OpenCameraAndTakePicture(Handled);
+        SendPictureToAzureAndVerifyUser(Handled, Verified);
         BreakPostingIfNotAuthorized(Handled, Verified);
     end;
 
-    local procedure OpenCameraAndTakePicture(var Handled: Boolean; var TempPicture: Record "AIR Temp Picture" temporary);
+    local procedure OpenCameraAndTakePicture(var Handled: Boolean);
     var
         Camera: Codeunit Camera;
         InStream: InStream;
@@ -21,10 +23,10 @@ codeunit 80101 "AIR CameraAuthorization"
         if Handled then
             exit;
 
-        TempPicture.Picture.ImportStream(InStream, '');
+        TemporarySavePicture(InStream);
     end;
 
-    local procedure SendPictureToAzureAndVerifyUser(var Handled: Boolean; var Verified: Boolean; var TempPicture: Record "AIR Temp Picture" temporary);
+    local procedure SendPictureToAzureAndVerifyUser(var Handled: Boolean; var Verified: Boolean);
     var
         OriginalFaceId: Text;
         CurrentFaceId: Text;
@@ -32,20 +34,21 @@ codeunit 80101 "AIR CameraAuthorization"
         if Handled then
             exit;
 
-        SendPictureToAzureAndGetFaceId(Handled, CurrentFaceId, TempPicture);
-        GetOriginalPicture(Handled, TempPicture);
-        SendPictureToAzureAndGetFaceId(Handled, OriginalFaceId, TempPicture);
+        SendPictureToAzureAndGetFaceId(Handled, CurrentFaceId);
+        GetOriginalPicture(Handled);
+        SendPictureToAzureAndGetFaceId(Handled, OriginalFaceId);
         VerifyIfTwoFacesBelongToOnePerson(Handled, Verified, OriginalFaceId, CurrentFaceId);
     end;
 
-    local procedure SendPictureToAzureAndGetFaceId(var Handled: Boolean; var FaceId: Text; var TempPicture: Record "AIR Temp Picture" temporary)
+    local procedure SendPictureToAzureAndGetFaceId(var Handled: Boolean; var FaceId: Text)
     var
         AzureFaceIdApiMgt: Codeunit "AIR Azure FaceAPI Mgt.";
+        InStream: InStream;
     begin
         if Handled then
             exit;
 
-        AzureFaceIdApiMgt.SendPictureToAzureAndGetFaceId(FaceId, TempPicture);
+        AzureFaceIdApiMgt.SendPictureToAzureAndGetFaceId(FaceId, BlobId);
     end;
 
     local procedure VerifyIfTwoFacesBelongToOnePerson(var Handled: Boolean; var Verified: Boolean; FaceId1: Text; FaceId2: Text)
@@ -58,12 +61,9 @@ codeunit 80101 "AIR CameraAuthorization"
         AzureFaceIdApiMgt.VerifyIfTwoFacesBelongToOnePerson(Verified, FaceId1, FaceId2);
     end;
 
-    local procedure GetOriginalPicture(var Handled: Boolean; var TempPicture: Record "AIR Temp Picture" temporary)
+    local procedure GetOriginalPicture(var Handled: Boolean)
     var
         UserSetup: Record "User Setup";
-        OutStream: OutStream;
-        InStream: InStream;
-        TempBlob: Codeunit "Temp Blob";
     begin
         if Handled then
             exit;
@@ -71,11 +71,7 @@ codeunit 80101 "AIR CameraAuthorization"
         if Not UserSetup.get(UserId) then
             exit;
 
-        TempBlob.CreateOutStream(OutStream);
-        UserSetup."AIR Picture".ExportStream(OutStream);
-        TempBlob.CreateInStream(InStream);
-
-        TempPicture.Picture.ImportStream(InStream, '');
+        TemporarySavePicture(UserSetup."AIR Picture".MediaId);
     end;
 
     local procedure BreakPostingIfNotAuthorized(var Handled: Boolean; var Verified: Boolean);
@@ -89,5 +85,35 @@ codeunit 80101 "AIR CameraAuthorization"
             Error(UserIsNotVerifiedErr);
     end;
 
+    local procedure TemporarySavePicture(Instream: InStream);
+    var
+        PersistentBlob: codeunit "Persistent Blob";
+    begin
+        DeletePictureFromTemporaryLocation();
+
+        BlobId := PersistentBlob.Create();
+        PersistentBlob.CopyFromInStream(BlobId, InStream);
+    end;
+
+    local procedure TemporarySavePicture(MediaId: Guid);
+    var
+        TenantMedia: Record "Tenant Media";
+        PersistentBlob: codeunit "Persistent Blob";
+        InStream: InStream;
+    begin
+        TenantMedia.get(MediaId);
+        TenantMedia.CalcFields(Content);
+        TenantMedia.Content.CreateInStream(InStream);
+
+        TemporarySavePicture(InStream);
+    end;
+
+    local procedure DeletePictureFromTemporaryLocation()
+    var
+        PersistentBlob: codeunit "Persistent Blob";
+    begin
+        if PersistentBlob.Exists(BlobId) then
+            PersistentBlob.Delete(BlobId);
+    end;
 
 }
