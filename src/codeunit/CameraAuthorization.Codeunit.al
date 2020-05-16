@@ -13,22 +13,13 @@ codeunit 80101 "AIR CameraAuthorization"
 
     local procedure OpenCameraAndTakePicture(var Handled: Boolean; var TempPicture: Record "AIR Temp Picture" temporary);
     var
-        //Camera: Codeunit Camera;
-        Camera: Page Camera;
-        CameraInteraction: Page "Camera Interaction";
+        Camera: Codeunit Camera;
         InStream: InStream;
+        PictureName: Text;
     begin
-        //Handled := Not Camera.GetPicture(PictureInStream, PictureName);
-        Handled := Not Camera.IsAvailable();
+        Handled := Not Camera.GetPicture(InStream, PictureName);
         if Handled then
             exit;
-
-        CameraInteraction.AllowEdit(true);
-        CameraInteraction.Quality(100);
-        CameraInteraction.EncodingType('JPEG');
-        CameraInteraction.RunModal();
-
-        CameraInteraction.GetPicture(InStream);
 
         TempPicture.Picture.ImportStream(InStream, '');
     end;

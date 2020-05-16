@@ -1,1 +1,1 @@
-﻿{"Added":[],"Modified":[{"Id":80102,"Kind":11,"Name":"AIR Azure FaceAPI Mgt.","PackagePath":"/src/src/codeunit/AzureFaceAPIMgt.Codeunit.al"}],"Removed":[]}
+﻿{"Added":[],"Modified":[{"Id":80101,"Kind":11,"Name":"AIR CameraAuthorization","PackagePath":"/src/src/codeunit/CameraAuthorization.Codeunit.al"},{"Id":80102,"Kind":11,"Name":"AIR Azure FaceAPI Mgt.","PackagePath":"/src/src/codeunit/AzureFaceAPIMgt.Codeunit.al"}],"Removed":[]}
